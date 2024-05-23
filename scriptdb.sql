@@ -1974,6 +1974,7 @@ ALTER TABLE Pedidos MODIFY COLUMN pedido_id INT AUTO_INCREMENT PRIMARY KEY;
 --------------------------------------------------------------------------------------------------
 -- 16.DATAS E VISÕES
 --------------------------------------------------------------------------------------------------
+
 -- VIEW - Crie uma visão para listar todas as vendas do mês atual.
 CREATE VIEW Vendas_Mes_Atual AS
 SELECT *
@@ -1981,6 +1982,8 @@ FROM Logs_Transacoes
 WHERE transacao_tipo = 'Venda'
 AND MONTH(data_hora) = MONTH(CURRENT_DATE())
 AND YEAR(data_hora) = YEAR(CURRENT_DATE());
+
 --------------------------------------------------------------------------------------------------
--- 16.LOGS e TRIGGERS
+-- 17.LOGS e TRIGGERS
 --------------------------------------------------------------------------------------------------
+-- LOG CLIENTE, PRODUTO, ESTOQUE, FORNECEDOR, ENVIO
