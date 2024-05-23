@@ -1,11 +1,11 @@
 --------------------------------------------------------------------------------------------------
--- CRIAÇÃO DAS TABELAS
+-- 1.CRIAÇÃO DAS BANCO DE DADOS
 --------------------------------------------------------------------------------------------------
 
 CREATE DATABASE EcommerceDB;
 
 --------------------------------------------------------------------------------------------------
--- CRIAÇÃO DAS TABELAS
+-- 2.CRIAÇÃO DAS TABELAS
 --------------------------------------------------------------------------------------------------
 
 -- 2.Clientes
@@ -1654,40 +1654,198 @@ ADD COLUMN metodo_pagamento_id INT,
 ADD FOREIGN KEY (metodo_pagamento_id) REFERENCES Metodos_Pagamento(metodo_id);
 
 --------------------------------------------------------------------------------------------------
--- 4.CONSULTAS BASICAS - SELECT, WHERE, NAD, OR, ORDER BY, LIMIT - DML
+-- 4.CONSULTAS BASICAS - SELECT, WHERE, AND, OR, ORDER BY, LIMIT - DML
 --------------------------------------------------------------------------------------------------
 
-
-
+-- SELECT - Listar todos os produtos de uma determinada categoria com preço maior que um valor específico:
+SELECT p.nome AS nome_produto,
+       p.preco
+FROM Produtos AS p
+JOIN Categorias_Produtos AS cp ON p.produto_id = cp.produto_id
+WHERE cp.categoria_id = 1 AND p.preco > 50.00;
+-- WHERE - Listar todos os produtos que estão em promoção:
+SELECT p.nome AS nome_produto,
+       p.preco,
+       dp.percentual_desconto
+FROM Produtos AS p
+JOIN Descontos_Produtos AS dp ON p.produto_id = dp.produto_id
+WHERE dp.data_inicio <= CURDATE() AND dp.data_fim >= CURDATE();
+-- AND - Listar todos os produtos vendidos em uma determinada data:
+SELECT p.nome AS nome_produto,
+       lt.data_hora
+FROM Produtos AS p
+JOIN Logs_Transacoes AS lt ON p.produto_id = lt.entidade_id
+WHERE lt.transacao_tipo = 'Venda' AND DATE(lt.data_hora) = '2024-05-01';
+-- OR - Listar todos os produtos com preço menor que R$50 OU que tenham um desconto de pelo menos 20%:
+SELECT p.nome AS nome_produto,
+       p.preco,
+       dp.percentual_desconto
+FROM Produtos AS p
+LEFT JOIN Descontos_Produtos AS dp ON p.produto_id = dp.produto_id
+WHERE p.preco < 50 OR dp.percentual_desconto >= 20;
+-- ORDER BY - Listar todos os produtos com estoque inferior a 100 unidades, ordenados pelo nome do produto:
+SELECT p.nome AS nome_produto,
+       he.quantidade_nova
+FROM Produtos AS p
+JOIN Historico_Estoque AS he ON p.produto_id = he.produto_id
+WHERE he.quantidade_nova < 100
+ORDER BY p.nome;
+-- LIMIT - Listar todos os produtos com desconto maior que 30%, limitando o resultado aos 5 primeiros:
+SELECT p.nome AS nome_produto,
+       dp.percentual_desconto
+FROM Produtos AS p
+JOIN Descontos_Produtos AS dp ON p.produto_id = dp.produto_id
+WHERE dp.percentual_desconto > 30
+LIMIT 5;
 
 --------------------------------------------------------------------------------------------------
 -- 5.MANIPULACAO DE DADOS - INSERT INTO, UPDATE, DELETE - DDL
 --------------------------------------------------------------------------------------------------
 
-
+-- INSERT INTO
+INSERT INTO Produtos (nome, preco, categoria_id)
+VALUES ('Novo Produto', 25.00, 2);
+-- UPDATE
+UPDATE Produtos
+SET preco = 30.00
+WHERE produto_id = 3;
+-- DELETE
+DELETE FROM Pedidos
+WHERE status = 'Cancelado';
 
 --------------------------------------------------------------------------------------------------
 -- 6.CONSULTAS AVANÇADAS - MIN, MAX, COUNT, AVG, SUM
 --------------------------------------------------------------------------------------------------
 
-
+-- COUNT - Encontrar o produto mais vendido
+SELECT p.nome AS nome_produto,
+       COUNT(*) AS total_vendas
+FROM Produtos p
+JOIN Itens_Pedido ip ON p.produto_id = ip.produto_id
+GROUP BY p.nome
+ORDER BY COUNT(*) DESC
+LIMIT 1;
+-- AVG - Encontrar a média de preços dos produtos
+SELECT AVG(preco) AS media_precos
+FROM Produtos;
+-- SUM - Encontrar o número total de produtos em estoque
+SELECT SUM(quantidade_nova) AS total_estoque
+FROM Historico_Estoque;
+-- MIN E MAX - Encontrar o menor e o maior preço entre os produtos
+SELECT MIN(preco) AS menor_preco,
+       MAX(preco) AS maior_preco
+FROM Produtos;
 
 --------------------------------------------------------------------------------------------------
 -- 7.UTILIZAÇÃO DE LIKE, WILDCARD, IN, BETWEEN
 --------------------------------------------------------------------------------------------------
 
-
+-- LIKE - Encontrar clientes cujos nomes começam com uma determinada letra A
+SELECT *
+FROM clientes
+WHERE nome LIKE 'A%';
+-- WILDCARD - Encontrar produtos com nomes que contenham uma determinada sequência de caracteres
+SELECT *
+FROM Produtos
+WHERE nome LIKE '%camiseta%';
+-- IN - Selecionar produtos de categorias específicas
+SELECT *
+FROM Produtos
+WHERE categoria_id IN (1, 2, 3);
+-- BETWEEN - Selecionar produtos com preços dentro de um determinado intervalo:
+SELECT *
+FROM Produtos
+WHERE preco BETWEEN 50.00 AND 100.00;
 
 --------------------------------------------------------------------------------------------------
 -- 9.ALIASES E JOIN - INNER JOIN, LEFT JOIN, RIGHT JOIN, CROSS JOIN, SELF JOIN
 --------------------------------------------------------------------------------------------------
 
-
+-- INNER JOIN - Listar todos os pedidos juntamente com o nome do cliente e o status do pedido:
+SELECT P.*,
+       c.nome,
+       P.status
+FROM Pedidos P
+INNER JOIN clientes c ON P.cliente_id = c.cliente_id;
+-- LEFT JOIN - Listar todos os produtos juntamente com suas categorias, mesmo que não haja uma correspondência na tabela de categorias
+SELECT p.*,
+       ct.nome
+FROM Produtos p
+LEFT JOIN Categorias ct ON p.categoria_id = ct.categoria_id;
+-- CROSS JOIN - Retorna uma combinação produto x categoria por cada categoria
+SELECT p.*,
+       ct.nome
+FROM Produtos p
+CROSS JOIN Categorias ct;
+-- SELF JOIN - Lista produtos que pertencem a mesma categoria
+SELECT P1.nome,
+       P2.nome AS produto_relacionado
+FROM Produtos P1
+INNER JOIN Produtos P2 ON P1.categoria_id = P2.categoria_id
+WHERE P1.produto_id <> P2.produto_id;
 
 
 --------------------------------------------------------------------------------------------------
 -- 10.UNION E AGRUPAMENTO - UNION, GROUP BY, HAVING
 --------------------------------------------------------------------------------------------------
+
+-- UNION
+        -- Consulta 1: Produtos vendidos antes de maio de 2024
+        SELECT produto_id,
+               data_inicio
+        FROM Descontos_Produtos
+        WHERE data_inicio < '2024-05-01'
+
+        UNION
+
+        -- Consulta 2: Produtos vendidos após julho de 2024
+        SELECT produto_id,
+               data_inicio
+        FROM Descontos_Produtos
+        WHERE data_inicio > '2024-07-31';
+
+-- GROUP BY - Consulta: Quantidade de vendas por mês
+SELECT
+    DATE_FORMAT(data_hora, '%M') AS mes,
+    COUNT(*) AS total_vendas
+FROM Logs_Transacoes
+WHERE transacao_tipo = 'Venda'
+GROUP BY mes;
+
+-- HAVING - Consulta: Categorias com mais de 1 produtos vendidos
+SELECT Categorias.nome,
+       COUNT(*) AS total_produtos_vendidos
+FROM Categorias
+INNER JOIN Categorias_Produtos ON Categorias.categoria_id = Categorias_Produtos.categoria_id
+INNER JOIN Logs_Transacoes ON Categorias_Produtos.produto_id = Logs_Transacoes.entidade_id
+WHERE Logs_Transacoes.transacao_tipo = 'Venda'
+GROUP BY Categorias.nome
+HAVING COUNT(*) > 1;
+
+-- TODAS
+SELECT Categorias.nome,
+       COUNT(*) AS quantidade_vendida
+FROM Categorias
+INNER JOIN Categorias_Produtos ON Categorias.categoria_id = Categorias_Produtos.categoria_id
+INNER JOIN Descontos_Produtos ON Categorias_Produtos.produto_id = Descontos_Produtos.produto_id
+INNER JOIN Logs_Transacoes ON Descontos_Produtos.produto_id = Logs_Transacoes.entidade_id
+WHERE Logs_Transacoes.transacao_tipo = 'Venda'
+GROUP BY Categorias.nome
+HAVING COUNT(*) > 0
+
+UNION
+
+SELECT 'Sem Categoria',
+       COUNT(*)
+FROM Descontos_Produtos
+LEFT JOIN Categorias_Produtos ON Descontos_Produtos.produto_id = Categorias_Produtos.produto_id
+WHERE Categorias_Produtos.produto_id IS NULL
+AND Descontos_Produtos.produto_id NOT IN (
+    SELECT produto_id FROM Categorias_Produtos
+)
+AND Descontos_Produtos.produto_id IN (
+    SELECT entidade_id FROM Logs_Transacoes WHERE transacao_tipo = 'Venda'
+);
 
 
 
@@ -1695,40 +1853,134 @@ ADD FOREIGN KEY (metodo_pagamento_id) REFERENCES Metodos_Pagamento(metodo_id);
 -- 11.SUBCONSULTAS E OPERADORES - EXISTS, ANY, ALL
 --------------------------------------------------------------------------------------------------
 
+-- EXISTS - Retorna true se a subconsulta retornar uma ou mais linhas.
+SELECT *
+FROM Produtos p
+WHERE EXISTS (
+    SELECT 1
+    FROM Avaliacoes a
+    WHERE a.produto_id = p.produto_id
+);
 
+-- NOT EXISTS - Listar os produtos que nunca receberam avaliações
+SELECT *
+FROM Produtos p
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM Avaliacoes a
+    WHERE a.produto_id = p.produto_id
+);
 
+-- ANY - Retorna true se algum dos valores na subconsulta satisfizer a condição.
+SELECT *
+FROM Produtos
+WHERE preco > ANY (
+    SELECT preco
+    FROM Produtos
+    WHERE categoria_id = 1
+);
+
+-- ALL - Retorna true se todos os valores na subconsulta satisfizerem a condição.
+SELECT *
+FROM Produtos
+WHERE preco > ALL (
+    SELECT preco
+    FROM Produtos
+    WHERE categoria_id = 1
+);
 
 --------------------------------------------------------------------------------------------------
--- 12.INSERÇÃO E SELEÇÃO AVANÇADA - INSERT SELECT, CASE, CONSLTAS NULAS(IFNULL, COALASCE)
+-- 12.INSERÇÃO E SELEÇÃO AVANÇADA - INSERT SELECT, CASE, CONSULTAS NULAS(IFNULL, COALASCE)
 --------------------------------------------------------------------------------------------------
 
+-- INSERTS
+INSERT INTO Categorias (nome, descricao)
+VALUES
+('Ferramentas', 'Diversos tipos de ferramentas manuais e elétricas');
 
-
+-- INSERT SELECT com CASE e IFNULL
+INSERT INTO Logs_Transacoes (transacao_tipo, total_transacoes, descricao)
+SELECT
+    transacao_tipo,
+    COUNT(*) AS total_transacoes,
+    CASE
+        WHEN descricao IS NULL THEN 'Não especificado'
+        ELSE descricao
+    END AS descricao_resumida
+FROM Logs_Transacoes
+GROUP BY transacao_tipo, descricao;
+-- IF NULL - sE O RESULTADO DA CONTAGEM FOR NUL RETORNE 0
+SELECT
+    transacao_tipo,
+    IFNULL(COUNT(*), 0) AS total_transacoes
+FROM Logs_Transacoes
+GROUP BY transacao_tipo;
 
 --------------------------------------------------------------------------------------------------
 -- 13.GERENCIAMENTO DE BANCO DE DADOS - CREATE DB, DROP DB, CREATE TABLE, DROP TABLE, ALTER TABLE
 --------------------------------------------------------------------------------------------------
 
-
-
-
+-- USE
+USE EcommerceDB;
+-- CREATE DB
+create database EcommerceDB;
+-- DROP DB
+drop database EcommerceDB;
+-- CREATE TABLE
+CREATE TABLE Categorias (
+    categoria_id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL UNIQUE,
+    descricao TEXT
+);
+-- DROP TABLE
+DROP TABLE Categorias;
+-- ALTER TABLE
+ALTER TABLE Categorias
+    ADD COLUMN TIPOS INT;
 
 --------------------------------------------------------------------------------------------------
 -- 14.CONSTRAINS - NOT NULL, UNIQUE, PRIMARY KEY, FOREIGN KEY, CHECK, DEFAULT
 --------------------------------------------------------------------------------------------------
 
+-- NOT NULL: Para garantir que um campo não possa conter valores nulos.
+ALTER TABLE Produtos MODIFY COLUMN nome VARCHAR(100) NOT NULL;
 
+-- UNIQUE: Para garantir que os valores em uma coluna sejam exclusivos.
+ALTER TABLE Clientes ADD CONSTRAINT unique_email UNIQUE (email);
 
+-- PRIMARY KEY: Para definir uma chave primária única para cada linha da tabela.
+ALTER TABLE Pedidos ADD CONSTRAINT pk_pedido_id PRIMARY KEY (pedido_id);
 
+-- FOREIGN KEY: Para garantir a integridade referencial entre duas tabelas.
+ALTER TABLE Pedidos ADD CONSTRAINT fk_cliente_id FOREIGN KEY (cliente_id) REFERENCES Clientes(cliente_id);
+
+-- CHECK: Para impor condições específicas em valores de coluna.
+ALTER TABLE Produtos ADD CONSTRAINT check_preco CHECK (preco > 0);
+
+-- DEFAULT: Para fornecer um valor padrão quando nenhum valor é especificado para uma coluna.
+ALTER TABLE Pedidos MODIFY COLUMN status VARCHAR(20) DEFAULT 'Pendente';
 
 --------------------------------------------------------------------------------------------------
--- 15.INDECES E INCREMENTOS - CRETE INDEX AUTO INCREMENT
+-- 15.INDECES E INCREMENTOS - CREATE INDEX, AUTO INCREMENT
 --------------------------------------------------------------------------------------------------
 
+-- INDEX - NAS TABELAS MAIS USADAS
+CREATE INDEX idx_produto_id ON Produtos (produto_id);
+CREATE INDEX idx_cliente_id ON Clientes (cliente_id);
 
-
-
+-- AUTO INCREMENT
+ALTER TABLE Pedidos MODIFY COLUMN pedido_id INT AUTO_INCREMENT PRIMARY KEY;
 
 --------------------------------------------------------------------------------------------------
 -- 16.DATAS E VISÕES
+--------------------------------------------------------------------------------------------------
+-- VIEW - Crie uma visão para listar todas as vendas do mês atual.
+CREATE VIEW Vendas_Mes_Atual AS
+SELECT *
+FROM Logs_Transacoes
+WHERE transacao_tipo = 'Venda'
+AND MONTH(data_hora) = MONTH(CURRENT_DATE())
+AND YEAR(data_hora) = YEAR(CURRENT_DATE());
+--------------------------------------------------------------------------------------------------
+-- 16.LOGS e TRIGGERS
 --------------------------------------------------------------------------------------------------
