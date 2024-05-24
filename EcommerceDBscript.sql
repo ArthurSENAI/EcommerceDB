@@ -1986,4 +1986,197 @@ AND YEAR(data_hora) = YEAR(CURRENT_DATE());
 --------------------------------------------------------------------------------------------------
 -- 17.LOGS e TRIGGERS
 --------------------------------------------------------------------------------------------------
+
 -- LOG CLIENTE, PRODUTO, ESTOQUE, FORNECEDOR, ENVIO
+drop table log_cliente;
+create table log_clientes (
+    id int auto_increment primary key,
+    operacao varchar(20),
+    cliente_id int,
+    nome varchar(500),
+    telefone varchar(500),
+    email varchar(500),
+    data_alteracao timestamp DEFAULT current_timestamp
+);
+
+-- trigGer
+create trigger delete_clientes
+    before delete on clientes
+    for each row
+    begin
+        insert into log_clientes(operacao, cliente_id, nome, telefone, email)
+            values ('DELETE',old.cliente_id, old.nome, old.telefone, old.email);
+    end;
+
+create trigger insert_clientes
+    after insert on clientes
+    for each row
+    begin
+        insert into log_clientes(operacao, cliente_id, nome, telefone, email)
+            values ('INSERT',new.cliente_id, new.nome, new.telefone, new.email);
+    end;
+
+create trigger update_clientes
+    after update on clientes
+    for each row
+    begin
+        insert into log_clientes(operacao, cliente_id, nome, telefone, email)
+            values ('UPDATE - DADO ANTIGO',old.cliente_id, old.nome, old.telefone, old.email);
+        insert into log_clientes(operacao, cliente_id, nome, telefone, email)
+            values ('UPDATE - DADO NOVO',new.cliente_id, new.nome, new.telefone, new.email);
+    end;
+
+
+-- LOG PRODUTOS
+create table log_produtos (
+    id int auto_increment primary key,
+    operacao varchar(20),
+    produto_id int,
+    categoria_id int,
+    nome varchar(500),
+    descricao varchar(500),
+    data_alteracao timestamp DEFAULT current_timestamp
+);
+
+-- TRIGGER
+create trigger delete_produtos
+    before delete on produtos
+    for each row
+    begin
+        insert into log_produtos(OPERACAO, PRODUTO_ID, CATEGORIA_ID, NOME, DESCRICAO)
+            values ('DELETE',old.produto_id, old.categoria_id, old.nome, old.descricao);
+    end;
+
+create trigger insert_produtos
+    after insert on produtos
+    for each row
+    begin
+        insert into log_produtos(OPERACAO, PRODUTO_ID, CATEGORIA_ID, NOME, DESCRICAO)
+            values ('INSERT',new.produto_id, new.categoria_id, new.nome, new.descricao);
+    end;
+
+create trigger update_produtos
+    after update on produtos
+    for each row
+    begin
+        insert into log_produtos(OPERACAO, PRODUTO_ID, CATEGORIA_ID, NOME, DESCRICAO)
+            values ('UPDATE - DADO ANTIGO',old.produto_id, old.categoria_id, old.nome, old.descricao);
+        insert into log_produtos(OPERACAO, PRODUTO_ID, CATEGORIA_ID, NOME, DESCRICAO)
+            values ('UPDATE - DADO NOVO',new.produto_id, new.categoria_id, new.nome, new.descricao);
+    end;
+
+
+-- LOG ESTOQUE
+create table log_estoque (
+    id int auto_increment primary key,
+    operacao varchar(20),
+    estoque_id int,
+    produto_id int,
+    quantidade varchar(500),
+    localizacao varchar(500),
+    data_alteracao timestamp DEFAULT current_timestamp
+);
+
+-- TRIGGER
+create trigger delete_estoque
+    before delete on estoque
+    for each row
+    begin
+        insert into log_estoque(OPERACAO, ESTOQUE_ID, PRODUTO_ID, QUANTIDADE, LOCALIZACAO)
+            values ('DELETE',old.estoque_id, old.produto_id, old.quantidade, old.localizacao);
+    end;
+
+create trigger insert_estoque
+    after insert on estoque
+    for each row
+    begin
+        insert into log_estoque(OPERACAO, ESTOQUE_ID, PRODUTO_ID, QUANTIDADE, LOCALIZACAO)
+            values ('DELETE',new.estoque_id, new.produto_id, new.quantidade, new.localizacao);
+    end;
+
+create trigger update_estoque
+    after update on estoque
+    for each row
+    begin
+        insert into log_estoque(OPERACAO, ESTOQUE_ID, PRODUTO_ID, QUANTIDADE, LOCALIZACAO)
+            values ('UPDATE - DADO ANTIGO',old.estoque_id, old.produto_id, old.quantidade, old.localizacao);
+        insert into log_estoque(OPERACAO, ESTOQUE_ID, PRODUTO_ID, QUANTIDADE, LOCALIZACAO)
+            values ('UPDATE - DADO NOVO',new.estoque_id, new.produto_id, new.quantidade, new.localizacao);
+    end;
+
+
+-- LOG FORNECEDORES
+create table log_fornecedores (
+    id int auto_increment primary key,
+    operacao varchar(20),
+    fornecedor_id int,
+    nome varchar(500),
+    contato varchar(500),
+    data_alteracao timestamp DEFAULT current_timestamp
+);
+
+-- TRIGGER
+create trigger delete_fornecedores
+    before delete on fornecedores
+    for each row
+    begin
+        insert into log_fornecedores(operacao, fornecedor_id, nome, contato)
+            values ('DELETE',old.fornecedor_id, old.nome, old.contato);
+    end;
+
+create trigger insert_fornecedores
+    after insert on fornecedores
+    for each row
+    begin
+        insert into log_fornecedores(operacao, fornecedor_id, nome, contato)
+            values ('INSERT',new.fornecedor_id, new.nome, new.contato);
+    end;
+
+create trigger update_fornecedores
+    after update on fornecedores
+    for each row
+    begin
+        insert into log_fornecedores(operacao, fornecedor_id, nome, contato)
+            values ('UPDATE - DADO ANTIGO',old.fornecedor_id, old.nome, old.contato);
+        insert into log_fornecedores(operacao, fornecedor_id, nome, contato)
+            values ('UPDATE - DADO NOVO',new.fornecedor_id, new.nome, new.contato);
+    end;
+
+
+-- LOG PEDIDOS
+create table log_pedidos (
+    id int auto_increment primary key,
+    Operacao varchar(20),
+    pedido_id int,
+    cliente_id int,
+    status varchar(500),
+    valor_total decimal,
+    data_alteracao timestamp DEFAULT current_timestamp
+);
+
+-- TRIGGER
+create trigger delete_pedidos
+    before delete on pedidos
+    for each row
+    begin
+        insert into log_pedidos(operacao, pedido_id, cliente_id, status, valor_total)
+            values ('DELETE',old.pedido_id, old.cliente_id, old.status, old.valor_total);
+    end;
+
+create trigger insert_pedidos
+    after insert on pedidos
+    for each row
+    begin
+        insert into log_pedidos(operacao, pedido_id, cliente_id, status, valor_total)
+            values ('INSERT',new.pedido_id, new.cliente_id, new.status, new.valor_total);
+    end;
+
+create trigger update_pedidos
+    after update on pedidos
+    for each row
+    begin
+        insert into log_pedidos(operacao, pedido_id, cliente_id, status, valor_total)
+            values ('UPDATE - DADO ANTIGO',old.pedido_id, old.cliente_id, old.status, old.valor_total);
+        insert into log_pedidos(operacao, pedido_id, cliente_id, status, valor_total)
+            values ('UPDATE - DADO NOVO',new.pedido_id, new.cliente_id, new.status, new.valor_total);
+    end;
