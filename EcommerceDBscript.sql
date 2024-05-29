@@ -2180,3 +2180,85 @@ create trigger update_pedidos
         insert into log_pedidos(operacao, pedido_id, cliente_id, status, valor_total)
             values ('UPDATE - DADO NOVO',new.pedido_id, new.cliente_id, new.status, new.valor_total);
     end;
+
+--------------------------------------------------------------------------------------------------
+-- 17.Function
+--------------------------------------------------------------------------------------------------
+-- Função Função para Calcular Descontos Atuais em Produtos
+DELIMITER //
+
+CREATE FUNCTION CalculaPrecoComDesconto(id_produto INT)
+RETURNS DECIMAL(10, 2)
+DETERMINISTIC
+BEGIN
+    DECLARE preco_final DECIMAL(10, 2);
+    DECLARE preco_atual DECIMAL(10, 2);
+    DECLARE desconto DECIMAL(5, 2);
+
+    -- Obtém o preço atual do produto
+    SELECT preco INTO preco_atual
+    FROM Produtos
+    WHERE produto_id = id_produto;
+
+    -- Obtém o desconto atual se houver
+    SELECT percentual_desconto INTO desconto
+    FROM Descontos_Produtos
+    WHERE produto_id = produto_id
+    AND CURDATE() BETWEEN data_inicio AND data_fim
+    LIMIT 1;
+
+    IF desconto IS NOT NULL THEN
+        SET preco_final = preco_atual - (preco_atual * desconto / 100);
+    ELSE
+        SET preco_final = preco_atual;
+    END IF;
+
+    RETURN preco_final;
+END //
+
+DELIMITER ;
+
+select CalculaPrecoComDesconto(2);
+
+-- Função para Contar o Número de Pedidos por Cliente
+DELIMITER //
+
+CREATE FUNCTION ContaPedidosPorCliente(id_cliente INT)
+RETURNS INT
+DETERMINISTIC
+BEGIN
+    DECLARE total_pedidos INT;
+
+    SELECT COUNT(*)
+    INTO total_pedidos
+    FROM Pedidos
+    WHERE cliente_id = id_cliente;
+
+    RETURN total_pedidos;
+END //
+
+DELIMITER ;
+
+select ContaPedidosPorCliente(2);
+
+-- Função para Calcular o Valor Total de Vendas em um Período
+DELIMITER //
+
+CREATE FUNCTION CalculaTotalVendas(data_inicio DATE, data_fim DATE)
+RETURNS DECIMAL(15, 2)
+DETERMINISTIC
+BEGIN
+    DECLARE total_vendas DECIMAL(15, 2);
+
+    SELECT SUM(p.valor)
+    INTO total_vendas
+    FROM Pagamentos p
+    WHERE p.data_pagamento BETWEEN data_inicio AND data_fim;
+
+    RETURN total_vendas;
+END //
+
+DELIMITER ;
+
+
+select CalculaTotalVendas('2024-05-10', '2024-05-30');
