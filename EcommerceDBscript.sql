@@ -1511,6 +1511,29 @@ VALUES
 ('Acesso', 5, '2024-05-19 12:00:00', 'Acesso ao sistema', 19),
 ('Erro', 5, '2024-05-20 14:00:00', 'Erro ao processar pagamento', 20);
 
+INSERT INTO Logs_Transacoes (transacao_tipo, entidade_id, data_hora, descricao, cliente_id)
+VALUES
+('Venda', 1, '2024-06-01 08:00:00', 'Venda do produto X', 1),
+('Compra', 1, '2024-06-02 10:00:00', 'Compra do fornecedor Y', 2),
+('Acesso', 1, '2024-06-03 12:00:00', 'Acesso ao sistema', 3),
+('Erro', 2, '2024-06-04 14:00:00', 'Erro ao processar pedido', 4),
+('Venda', 2, '2024-06-05 16:00:00', 'Venda do produto Y', 5),
+('Compra', 2, '2024-06-06 18:00:00', 'Compra do fornecedor Z', 6),
+('Acesso', 2, '2024-06-07 20:00:00', 'Acesso ao sistema', 7),
+('Erro', 3, '2024-06-08 22:00:00', 'Erro ao processar pagamento', 8),
+('Venda', 3, '2024-06-09 08:00:00', 'Venda do produto Z', 9),
+('Compra', 3, '2024-06-10 10:00:00', 'Compra do fornecedor X', 10),
+('Acesso', 3, '2024-06-11 12:00:00', 'Acesso ao sistema', 11),
+('Erro', 4, '2024-06-12 14:00:00', 'Erro ao processar envio', 12),
+('Venda', 4, '2024-06-13 16:00:00', 'Venda do produto W', 13),
+('Compra', 4, '2024-06-14 18:00:00', 'Compra do fornecedor Y', 14),
+('Acesso', 4, '2024-06-15 20:00:00', 'Acesso ao sistema', 15),
+('Erro', 5, '2024-06-16 22:00:00', 'Erro ao processar pedido', 16),
+('Venda', 5, '2024-06-17 08:00:00', 'Venda do produto V', 17),
+('Compra', 5, '2024-06-18 10:00:00', 'Compra do fornecedor Z', 18),
+('Acesso', 5, '2024-06-19 12:00:00', 'Acesso ao sistema', 19),
+('Erro', 5, '2024-06-20 14:00:00', 'Erro ao processar pagamento', 20);
+
 INSERT INTO Perfis_Usuarios (cliente_id, preferencia_json)
 VALUES
 (1, '{"idioma": "pt-br", "tema": "claro"}'),
@@ -1967,6 +1990,12 @@ ALTER TABLE Pedidos MODIFY COLUMN status VARCHAR(20) DEFAULT 'Pendente';
 -- INDEX - NAS TABELAS MAIS USADAS
 CREATE INDEX idx_produto_id ON Produtos (produto_id);
 CREATE INDEX idx_cliente_id ON Clientes (cliente_id);
+CREATE INDEX idx_cliente_nome ON Clientes(nome);
+CREATE INDEX idx_produto_nome ON Produtos(nome);
+CREATE INDEX idx_pedido_status ON Pedidos(status);
+CREATE INDEX idx_cliente_email ON Clientes(email);
+CREATE INDEX idx_pedido_data ON Pedidos(data_pedido);
+
 
 -- AUTO INCREMENT
 ALTER TABLE Pedidos MODIFY COLUMN pedido_id INT AUTO_INCREMENT PRIMARY KEY;
@@ -1988,7 +2017,7 @@ AND YEAR(data_hora) = YEAR(CURRENT_DATE());
 --------------------------------------------------------------------------------------------------
 
 -- LOG CLIENTE, PRODUTO, ESTOQUE, FORNECEDOR, ENVIO
-drop table log_cliente;
+
 create table log_clientes (
     id int auto_increment primary key,
     operacao varchar(20),
@@ -2262,3 +2291,45 @@ DELIMITER ;
 
 
 select CalculaTotalVendas('2024-05-10', '2024-05-30');
+
+-- SELECTS para o JasperReport
+SELECT p.produto_id, p.nome AS produto, c.nome AS categoria
+FROM Produtos p
+INNER JOIN Categorias c ON p.categoria_id = c.categoria_id;
+
+
+SELECT MONTH(data_hora) AS mes,
+       COUNT(*) AS total_vendas
+FROM Logs_Transacoes
+WHERE transacao_tipo = 'Venda'
+GROUP BY MONTH(data_hora);
+
+
+SELECT c.cliente_id,
+       c.nome,
+       COUNT(p.pedido_id) AS total_pedidos
+FROM Pedidos as p
+inner join clientes as c on p.cliente_id = c.cliente_id
+GROUP BY c.cliente_id;
+
+SELECT ap.produto_id, p.nome AS nome_produto, AVG(ap.nota) AS nota_media
+FROM Avaliacoes ap
+JOIN Produtos p ON ap.produto_id = p.produto_id
+GROUP BY ap.produto_id, p.nome;
+
+
+SELECT
+    devolucao_id,
+    p.produto_id,
+    p.nome,
+    d.data_devolucao,
+    d.motivo,
+    d.quantidade
+FROM Devolucoes d
+inner join produtos as p on d.produto_id = p.produto_id
+WHERE data_devolucao BETWEEN '2024-05-01' AND '2024-06-30';
+
+SELECT MONTH(data_devolucao) AS mes,
+       COUNT(*) AS total_devolucoes
+FROM Devolucoes
+GROUP BY MONTH(data_devolucao);
